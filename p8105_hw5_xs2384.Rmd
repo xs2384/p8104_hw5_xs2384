@@ -4,10 +4,14 @@ output: github_document
 ---
 
 ## Problem 1
-
-```{r, message=FALSE}
+```{r setup, include=FALSE}
 library(tidyverse)
 library(purrr)
+knitr::opts_chunk$set(fig.width=12, fig.height=8)
+```
+
+```{r, message=FALSE}
+
 set.seed(10)
 
 iris_with_missing = iris %>% 
@@ -41,5 +45,9 @@ read_data = function(x){
 df = cbind(df, map(df[[1]], read_data) %>% bind_rows())
 df = df %>% separate(subject_id, into = c("arm", "subject_id"), sep = "\\_") %>% separate(subject_id, into = c("subject_id", "delete")) %>% select(-delete)
 knitr::kable(df)
+
+df %>% pivot_longer(week_1:week_8, names_to = "week", values_to = "value") %>% mutate(id = str_c(arm, "_" ,subject_id), week = factor(str_remove(week, "week_"))) %>% ggplot(aes(x=week, y = value, group = id)) + geom_line(aes(color = id)) + facet_grid(.~arm) + theme_bw() + theme(legend.position = "bottom", plot.title = element_text(hjust = 0.5), legend.title = element_blank()) + labs(
+  title = "Spaghetti Plot (con vs eop)"
+) + guides(colour = guide_legend(nrow = 2)) + geom_point(aes(color = id, shape = arm))
 ```
 
