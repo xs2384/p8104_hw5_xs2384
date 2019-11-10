@@ -51,3 +51,40 @@ df %>% pivot_longer(week_1:week_8, names_to = "week", values_to = "value") %>% m
 ) + guides(colour = guide_legend(nrow = 2)) + geom_point(aes(color = id, shape = arm))
 ```
 
+In the control arm, the value did not change a lot from week 1 to week 8, although there is fluctuation through these weeks. In the experimental arm, the values have increasing trend from week 1 and week 8. We can see that control arm did not have explicitly trend to increase or decrease whereas experimental arm has the trend of increasing. 
+
+```{r}
+slr = function(n=30, beta0=2, beta1){
+ sim_data = tibble(x = rnorm(n,0,1),
+  y = beta0 + beta1*x + rnorm(n,0,sqrt(50))
+ )
+  
+  ls_fit = lm(y~x, data = sim_data )
+  broom::tidy(ls_fit)
+}
+
+
+sim_results_0 = rerun(10000, slr(beta1 = 0)) %>% bind_rows()
+
+for(i in 1:6){
+  assign(str_c("sim_results", "_", i), rerun(10000, slr(beta1 = i)) %>% bind_rows())
+}
+
+simresult = vector("list", 7)
+for(i in 1:7){
+  simresult[[i]] = str_c("sim_results", "_", i-1)
+}
+
+
+sim_power = list()
+for(i in 0:6){
+  sim_power[as.character(i)] = nrow(filter(.data = eval(parse(text=simresult[[i+1]])), term == "x" & p.value < 0.05))/nrow(filter(eval(parse(text = simresult[[i+1]])), term == "x"))
+}
+
+
+data.frame(sim_power) %>%  pivot_longer(X0:X6, names_to = "beta1", values_to = "power") %>% mutate(
+  beta = str_remove(beta1, "X")
+) %>% ggplot(aes(x = beta1, y = power, group = 1)) + geom_line(color = "red", size = 1) + geom_point(color = "red", size = 3) + theme_bw() + labs(title = "The Power of the Test", x = "True Beta1", y = "Power") + theme(plot.title = element_text(hjust = 0.5))
+
+```
+
