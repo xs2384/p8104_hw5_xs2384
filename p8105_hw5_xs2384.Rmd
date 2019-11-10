@@ -1,5 +1,45 @@
 ---
 title: "HW5"
-output: html_document
+output: github_document
 ---
+
+## Problem 1
+
+```{r, message=FALSE}
+library(tidyverse)
+library(purrr)
+set.seed(10)
+
+iris_with_missing = iris %>% 
+  map_df(~replace(.x, sample(1:150, 20), NA)) %>%
+  mutate(Species = as.character(Species)) %>% janitor::clean_names()
+
+rep_mis = function(x){
+  if(is.character(x)){
+    col = replace(x, is.na(x), "virginica")
+  }else if(is.numeric(x)){
+    col = replace(x, is.na(x), round(mean(x, na.rm = T),1))
+  }
+  col
+}
+
+iris = map(iris_with_missing, rep_mis)
+iris_df = data.frame(iris)
+knitr::kable(head(iris_df))
+```
+
+## Problem 2
+
+```{r, message=FALSE}
+df = tibble(subject_id = list.files("./data/"))
+read_data = function(x){
+  path = str_c("./data/", x)
+  data = read_csv(path)
+  data
+}
+
+df = cbind(df, map(df[[1]], read_data) %>% bind_rows())
+df = df %>% separate(subject_id, into = c("arm", "subject_id"), sep = "\\_") %>% separate(subject_id, into = c("subject_id", "delete")) %>% select(-delete)
+knitr::kable(df)
+```
 
