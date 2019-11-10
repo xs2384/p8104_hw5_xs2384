@@ -46,14 +46,14 @@ read_data = function(x){
 }
 
 df = cbind(df, map(df[[1]], read_data) %>% bind_rows())
-df = df %>% separate(subject_id, into = c("arm", "subject_id"), sep = "\\_") %>% separate(subject_id, into = c("subject_id", "delete")) %>% select(-delete)
+df = df %>% separate(subject_id, into = c("arm", "subject_id"), sep = "\\_") %>% separate(subject_id, into = c("subject_id", "delete")) %>% select(-delete) %>% pivot_longer(week_1:week_8, names_to = "week", values_to = "value") %>% mutate(id = str_c(arm, "_" ,subject_id), week = factor(str_remove(week, "week_"))) 
 knitr::kable(df)
 ```
 
 ### Visualize the result
 
 ```{r, message=FALSE}
-df %>% pivot_longer(week_1:week_8, names_to = "week", values_to = "value") %>% mutate(id = str_c(arm, "_" ,subject_id), week = factor(str_remove(week, "week_"))) %>% ggplot(aes(x=week, y = value, group = id)) + geom_line(aes(color = id)) + facet_grid(.~arm) + theme_bw() + theme(legend.position = "bottom", plot.title = element_text(hjust = 0.5), legend.title = element_blank()) + labs(
+df %>% ggplot(aes(x=week, y = value, group = id)) + geom_line(aes(color = id)) + facet_grid(.~arm) + theme_bw() + theme(legend.position = "bottom", plot.title = element_text(hjust = 0.5), legend.title = element_blank()) + labs(
   title = "Spaghetti Plot (con vs eop)"
 ) + guides(colour = guide_legend(nrow = 2)) + geom_point(aes(color = id, shape = arm))
 ```
